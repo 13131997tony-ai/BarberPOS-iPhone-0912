@@ -1,0 +1,80 @@
+[
+  {
+    "id": "GRAPHITE_RED",
+    "name": "Graphite đỏ son",
+    "background": "#14181E",
+    "surface": "#202631",
+    "ink": "#F4F6FA",
+    "muted": "#B5C0CF",
+    "action": "#B9362D",
+    "focus": "#88B5FE",
+    "fontScale": 1,
+    "spacing": 12,
+    "dark": true
+  },
+  {
+    "id": "MIDNIGHT_BLUE",
+    "name": "Lam đêm",
+    "background": "#0E1828",
+    "surface": "#192B43",
+    "ink": "#F1F6FF",
+    "muted": "#BBCDE6",
+    "action": "#225BB6",
+    "focus": "#91C8FF",
+    "fontScale": 1,
+    "spacing": 12,
+    "dark": true
+  },
+  {
+    "id": "DEEP_MOSS",
+    "name": "Rêu đậm",
+    "background": "#10201A",
+    "surface": "#20382D",
+    "ink": "#F0FAF4",
+    "muted": "#BBD5C7",
+    "action": "#246B4C",
+    "focus": "#91E2B7",
+    "fontScale": 1,
+    "spacing": 12,
+    "dark": true
+  },
+  {
+    "id": "WARM_COPPER",
+    "name": "Đồng ấm",
+    "background": "#211915",
+    "surface": "#392921",
+    "ink": "#FFF6EB",
+    "muted": "#E3CBB9",
+    "action": "#9E451D",
+    "focus": "#FFC495",
+    "fontScale": 1,
+    "spacing": 12,
+    "dark": true
+  },
+  {
+    "id": "MIDNIGHT_PLUM",
+    "name": "Mận đêm",
+    "background": "#21172A",
+    "surface": "#35263F",
+    "ink": "#FCF2FF",
+    "muted": "#DAC4E5",
+    "action": "#843B9F",
+    "focus": "#E9ADFF",
+    "fontScale": 1,
+    "spacing": 12,
+    "dark": true
+  },
+  {
+    "id": "LIGHT_SAND",
+    "name": "Cát sáng",
+    "background": "#F5F1E8",
+    "surface": "#FFFDF9",
+    "ink": "#211D19",
+    "muted": "#51463C",
+    "action": "#125D64",
+    "focus": "#075E89",
+    "fontScale": 1,
+    "spacing": 12,
+    "dark": false
+  }
+]
