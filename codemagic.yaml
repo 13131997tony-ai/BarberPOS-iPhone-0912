@@ -50,8 +50,11 @@ workflows:
           executable="$(read_plist CFBundleExecutable)"
           [[ -n "$executable" && "$executable" != */* && -f "$app/$executable" ]] ||
             fail "iPhone executable not found in $app: $executable"
-          xcrun lipo -verify_arch arm64 "$app/$executable" ||
-            fail "App executable does not contain arm64: $app/$executable"
+          architectures="$(xcrun lipo -archs "$app/$executable")" ||
+            fail "Cannot read executable architectures: $app/$executable"
+          printf 'Executable architectures: %s\n' "$architectures"
+          [[ " $architectures " == *" arm64 "* ]] ||
+            fail "Expected arm64, found: $architectures"
           version="$(read_plist CFBundleShortVersionString)"
           build="$(read_plist CFBundleVersion)"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "Invalid app version: $version"
@@ -82,3 +85,6 @@ workflows:
           printf 'IPA ready: %s\n' "$output/$name"
     artifacts:
       - build/ipa/*.ipa
+
+
+
