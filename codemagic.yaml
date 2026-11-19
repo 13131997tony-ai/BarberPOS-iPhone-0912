@@ -1,0 +1,84 @@
+workflows:
+  barberpos-ios-usb-free:
+    name: BarberPOS iPhone USB - unsigned IPA
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      xcode: "26.2"
+    scripts:
+      - name: Generate the Xcode project
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          command -v xcodegen >/dev/null || brew install xcodegen
+          cd "$CM_BUILD_DIR/iosApp"
+          xcodegen generate
+      - name: Build for a physical iPhone
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          products="$CM_BUILD_DIR/build/ios-device/products"
+          xcodebuild -project "$CM_BUILD_DIR/iosApp/BarberPOSiOS.xcodeproj" \
+            -scheme BarberPOSiOS -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath "$CM_BUILD_DIR/build/ios-device" \
+            CONFIGURATION_BUILD_DIR="$products" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package the unsigned IPA
+        script: |
+          #!/bin/bash
+          set -Eeuo pipefail
+          trap 'status=$?; printf "IPA packaging failed at line %s (exit %s): %s\n" "$LINENO" "$status" "$BASH_COMMAND" >&2' ERR
+
+          fail() { printf 'IPA packaging: %s\n' "$*" >&2; exit 1; }
+          read_plist() {
+            /usr/libexec/PlistBuddy -c "Print :$1" "$plist" ||
+              fail "Missing or unreadable $1 in $plist"
+          }
+
+          products="$CM_BUILD_DIR/build/ios-device/products"
+          app="$products/BarberPOSiOS.app"
+          plist="$app/Info.plist"
+          output="$CM_BUILD_DIR/build/ipa"
+          printf 'Packaging iPhone app from %s\n' "$app"
+          if [[ ! -f "$plist" ]]; then
+            if [[ -d "$products" ]]; then
+              ls -la "$products"
+            fi
+            fail "Info.plist not found at $plist. Check the Xcode build destination and output directory."
+          fi
+          executable="$(read_plist CFBundleExecutable)"
+          [[ -n "$executable" && "$executable" != */* && -f "$app/$executable" ]] ||
+            fail "iPhone executable not found in $app: $executable"
+          xcrun lipo -verify_arch arm64 "$app/$executable" ||
+            fail "App executable does not contain arm64: $app/$executable"
+          version="$(read_plist CFBundleShortVersionString)"
+          build="$(read_plist CFBundleVersion)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "Invalid app version: $version"
+          [[ "$build" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]] || fail "Invalid build number: $build"
+          printf 'Packaging version %s, build %s\n' "$version" "$build"
+
+          staging="$(mktemp -d)"
+          trap 'rm -rf "$staging"' EXIT
+          mkdir -p "$staging/Payload" "$output"
+          packaged_app="$staging/Payload/BarberPOSiOS.app"
+          ditto "$app" "$packaged_app"
+          if [[ ! -f "$packaged_app/theme-presets.json" ]]; then
+            theme="$CM_BUILD_DIR/shared-spec/theme-presets.json"
+            [[ -f "$theme" ]] || fail "theme-presets.json is missing in the app and at $theme"
+            printf 'Adding bundled theme from %s\n' "$theme"
+            cp "$theme" "$packaged_app/theme-presets.json"
+          fi
+
+          name="BarberPOS_${version}_iPhone_Unsigned.ipa"
+          ditto -c -k --keepParent "$staging/Payload" "$staging/$name"
+          unzip -tq "$staging/$name"
+          unzip -Z1 "$staging/$name" > "$staging/ipa-entries.txt"
+          for entry in Info.plist "$executable" theme-presets.json; do
+            grep -Fxq "Payload/BarberPOSiOS.app/$entry" "$staging/ipa-entries.txt" ||
+              fail "IPA is missing Payload/BarberPOSiOS.app/$entry"
+          done
+          mv -f "$staging/$name" "$output/$name"
+          printf 'IPA ready: %s\n' "$output/$name"
+    artifacts:
+      - build/ipa/*.ipa
